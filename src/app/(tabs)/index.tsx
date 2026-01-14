@@ -1,11 +1,38 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState, useCallback } from 'react';
 import { StyleSheet, ImageBackground, ScrollView } from 'react-native';
 import { ThemeContext } from '../_layout';
 import { Status, SearchBar } from '../../components';
+import { useFocusEffect } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 export default function Cases() {
 	const { colorScheme } = useContext(ThemeContext);
+
+	const [reports, setReports] = useState<any[]>([]);
+const [loading, setLoading] = useState(false);
+
+const loadReports = async () => {
+  try {
+    setLoading(true);
+    const res = await fetch("http://localhost:3001/reports");
+    const data = await res.json();
+    setReports(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.log("Błąd pobierania reports", e);
+    setReports([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useFocusEffect(
+  useCallback(() => {
+    loadReports();
+  }, [])
+);
+
+
+
 
 	return (
 		<ImageBackground
@@ -25,30 +52,20 @@ export default function Cases() {
 					style={styles.container}
 				>
 					<SearchBar />
-					<Status
-						iconName="more-horizontal"
-						bgColor="#16AAEA"
-						textColor="#16AAEA"
-						statusText="w toku"
-					/>
-					<Status
-						iconName="alert-triangle"
-						bgColor="#DC1F0D"
-						textColor="#DC1F0D"
-						statusText="umorzona"
-					/>
-					<Status
-						iconName="x"
-						bgColor="#F0B812"
-						textColor="#F0B812"
-						statusText="nieprzyjęta"
-					/>
-					<Status
-						iconName="check"
-						bgColor="#00CC1D"
-						textColor="#00CC1D"
-						statusText="zrealizowany"
-					/>
+					<Animated.Text>
+  {loading ? "Ładowanie..." : `Zgłoszeń: ${reports.length}`}
+</Animated.Text>
+
+					{reports.map((r) => (
+  <Status
+    key={r.id}
+    iconName="more-horizontal"
+    bgColor="#16AAEA"
+    textColor="#16AAEA"
+    statusText={`${r.status ?? "przyjęte"} • ID: ${r.id}`}
+  />
+))}
+
 				</Animated.View>
 			</ScrollView>
 		</ImageBackground>

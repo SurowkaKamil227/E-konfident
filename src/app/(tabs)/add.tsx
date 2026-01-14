@@ -30,6 +30,68 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 export default function TabOneScreen() {
 	const [password, setPassword] = useState('');
 	const [date, setDate] = useState('');
+	const API_URL = "http://localhost:3001/reports";
+
+	const onChangeTime = ({ type }: any, selectedTime: any) => {
+  if (type === 'set' && selectedTime) {
+    const currentTime = selectedTime;
+    setTime(currentTime);
+
+    // na Androidzie zamykamy picker i zapisujemy string
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+      setTimeString(formatTime(currentTime));
+    }
+  } else {
+    // anulowanie
+    setShowTimePicker(false);
+  }
+};
+
+
+const sendReport = async () => {
+    try {
+
+		if (password.length < 8) {
+  alert("Hasło musi mieć min. 8 znaków.");
+  return;
+}
+
+if (!date || date.trim() === "") {
+  alert("Wybierz datę zdarzenia.");
+  return;
+}
+
+if (!timeString || timeString.trim() === "") {
+  alert("Wybierz godzinę zdarzenia.");
+  return;
+}
+
+      const payload = {
+  createdAt: new Date().toISOString(),
+  status: "przyjęte",
+  eventDate: date,
+  eventTime: timeString,
+};
+
+
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("API error");
+      const saved = await res.json();
+
+      alert(`Zapisano zgłoszenie. ID: ${saved.id}`);
+    } catch (e) {
+      alert("Błąd zapisu. Sprawdź czy działa npm run api.");
+    }
+  };
+
+
 	const [dateString, setDateString] = useState('');
 	const [time, setTime] = useState(new Date());
 	const [timeString, setTimeString] = useState('');
@@ -43,23 +105,22 @@ export default function TabOneScreen() {
 	};
 
 	const toggleTimePicker = () => {
-		setShowTimePicker(!showTimePicker);
-	};
+  if (Platform.OS === 'web') {
+    const input = window.prompt('Podaj godzinę (HH:MM)', timeString || '12:00');
+    if (!input) return;
 
-	const onChangeTime = ({ type }: any, selectedTime: any) => {
-		if (type === 'set' && selectedTime) {
-			const currentTime = selectedTime;
-			setTime(currentTime);
+    const ok = /^([01]\d|2[0-3]):([0-5]\d)$/.test(input);
+    if (!ok) {
+      alert('Zły format. Wpisz np. 21:49');
+      return;
+    }
+    setTimeString(input);
+    return;
+  }
 
-			if (Platform.OS === 'android') {
-				toggleTimePicker();
-				setTime(currentTime);
-				setTimeString(formatTime(currentTime));
-			}
-		} else {
-			toggleTimePicker();
-		}
-	};
+  setShowTimePicker(!showTimePicker);
+};
+
 
 	const confirmIOSTime = () => {
 		setTime(time);
@@ -67,16 +128,19 @@ export default function TabOneScreen() {
 		toggleTimePicker();
 	};
 
-	const formatTime = (rawTime: string): string => {
-		let formattedTime = new Date(rawTime);
-		let hours = formattedTime.getHours();
-		let minutes = formattedTime.getMinutes();
+	const formatTime = (rawTime: Date | string): string => {
+  const d = rawTime instanceof Date ? rawTime : new Date(rawTime);
 
-		const formattedHours = hours < 10 ? `0${hours}` : hours;
-		const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+  const hours = d.getHours();
+  const minutes = d.getMinutes();
 
-		return `${formattedHours}:${formattedMinutes}`;
-	};
+  const formattedHours = hours < 10 ? `0${hours}` : `${hours}`;
+  const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
+
+  return `${formattedHours}:${formattedMinutes}`;
+};
+
+
 
 	return (
 		<ImageBackground
@@ -247,7 +311,7 @@ export default function TabOneScreen() {
 								secureTextEntry={true}
 							/>
 							<Button
-								onPress={() => console.log('wysłano')}
+								onPress={sendReport}
 								width={324}
 								height={44}
 								text="Wyślij sprawę"

@@ -6,7 +6,8 @@ import { AccountHeader, Button } from '../../components';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const MyAccount = () => {
-	const navigation = useNavigation();
+	const navigation = useNavigation<any>();
+
 	const { colorScheme } = useContext(ThemeContext);
 
 	return (
