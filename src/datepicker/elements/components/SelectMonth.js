@@ -4,7 +4,7 @@ import {
 	StyleSheet,
 	Text,
 	Animated,
-	TouchableOpacity,
+	Pressable,
 	Easing,
 	Image,
 	TextInput,

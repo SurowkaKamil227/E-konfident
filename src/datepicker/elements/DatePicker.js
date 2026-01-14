@@ -1,6 +1,7 @@
-import React, { createContext, useReducer, useContext, useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
+import { CalendarContext, useCalendar } from "./CalendarContext";
 
 import { Calendar } from './components/Calendar';
 import { SelectMonth } from './components/SelectMonth';
@@ -33,12 +34,7 @@ const reducer = (state, action) => {
 	}
 };
 
-const CalendarContext = createContext();
 
-const useCalendar = () => {
-	const contextValue = useContext(CalendarContext);
-	return contextValue;
-};
 
 const DatePicker = (props) => {
 	const calendarUtils = new utils(props);

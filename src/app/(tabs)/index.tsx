@@ -4,6 +4,9 @@ import { ThemeContext } from '../_layout';
 import { Status, SearchBar } from '../../components';
 import { useFocusEffect } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { db, auth } from "../../lib/firebase";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+
 
 export default function Cases() {
 	const { colorScheme } = useContext(ThemeContext);
@@ -14,9 +17,27 @@ const [loading, setLoading] = useState(false);
 const loadReports = async () => {
   try {
     setLoading(true);
-    const res = await fetch("http://localhost:3001/reports");
-    const data = await res.json();
-    setReports(Array.isArray(data) ? data : []);
+
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setReports([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "reports"),
+      where("userId", "==", uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const snap = await getDocs(q);
+
+    const data = snap.docs.map((d) => ({
+      id: d.id, // Firestore ID dokumentu
+      ...d.data(),
+    }));
+
+    setReports(data);
   } catch (e) {
     console.log("Błąd pobierania reports", e);
     setReports([]);
@@ -24,6 +45,7 @@ const loadReports = async () => {
     setLoading(false);
   }
 };
+
 
 useFocusEffect(
   useCallback(() => {

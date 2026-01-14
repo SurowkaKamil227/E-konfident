@@ -26,11 +26,13 @@ import {
 } from '../../components';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { db, auth } from "../../lib/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { signInAnonymously } from "firebase/auth";
 
 export default function TabOneScreen() {
 	const [password, setPassword] = useState('');
 	const [date, setDate] = useState('');
-	const API_URL = "http://localhost:3001/reports";
 
 	const onChangeTime = ({ type }: any, selectedTime: any) => {
   if (type === 'set' && selectedTime) {
@@ -50,46 +52,48 @@ export default function TabOneScreen() {
 
 
 const sendReport = async () => {
-    try {
+  try {
+    // walidacje zostają jak masz
+    if (password.length < 8) {
+      alert("Hasło musi mieć min. 8 znaków.");
+      return;
+    }
 
-		if (password.length < 8) {
-  alert("Hasło musi mieć min. 8 znaków.");
-  return;
-}
+    if (!date || date.trim() === "") {
+      alert("Wybierz datę zdarzenia.");
+      return;
+    }
 
-if (!date || date.trim() === "") {
-  alert("Wybierz datę zdarzenia.");
-  return;
-}
+    if (!timeString || timeString.trim() === "") {
+      alert("Wybierz godzinę zdarzenia.");
+      return;
+    }
 
-if (!timeString || timeString.trim() === "") {
-  alert("Wybierz godzinę zdarzenia.");
-  return;
-}
+    // upewniamy się, że jest użytkownik (anonim)
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+    }
 
-      const payload = {
-  createdAt: new Date().toISOString(),
-  status: "przyjęte",
-  eventDate: date,
-  eventTime: timeString,
+    const uid = auth.currentUser?.uid ?? "unknown";
+
+    const payload = {
+      createdAt: serverTimestamp(),
+      status: "przyjęte",
+      eventDate: date,
+      eventTime: timeString,
+      userId: uid,
+    };
+
+    // zapis do Firestore
+    const docRef = await addDoc(collection(db, "reports"), payload);
+
+    alert(`Zapisano zgłoszenie. ID: ${docRef.id}`);
+  } catch (e) {
+    console.log(e);
+    alert("Błąd zapisu do Firestore.");
+  }
 };
 
-
-
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("API error");
-      const saved = await res.json();
-
-      alert(`Zapisano zgłoszenie. ID: ${saved.id}`);
-    } catch (e) {
-      alert("Błąd zapisu. Sprawdź czy działa npm run api.");
-    }
-  };
 
 
 	const [dateString, setDateString] = useState('');

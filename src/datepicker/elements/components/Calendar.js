@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, Animated, Pressable } from 'react-native';
 
 import { Header } from './Header';
 import { Days } from './Days';
-import { useCalendar } from '../DatePicker';
+import { useCalendar } from "../CalendarContext";
 import { ThemeContext } from '../../../app/_layout';
 
 const Calendar = () => {
